@@ -2,6 +2,9 @@ import jax
 import jax.numpy as jnp
 from functools import partial
 from surrogate import SurrogateModel
+import equinox as eqx
+
+input_labels = ["B", "T", "P", "C", "E", "R", "Alpha", "Re"]
 
 #Generate the base network, later to be populated with weights
 def generate_base_model(key=jax.random.PRNGKey(42)):
@@ -20,12 +23,12 @@ def generate_base_model(key=jax.random.PRNGKey(42)):
 #They also take angle inputs in radians and convert it to degrees.
 #This is because the neural network is trained in degrees.
 
-@partial(jax.jit, static_argnums=(0,))
+@eqx.filter_jit
 def cl(model, B, T, P, C, E, R, alpha, Re):
     alpha = jnp.rad2deg(alpha)
     return model(jnp.hstack([B, T, P, C, E, R, alpha, Re]))
 
-@partial(jax.jit, static_argnums=(0,))
+@eqx.filter_jit
 def cd(model, B, T, P, C, E, R, alpha, Re):
     alpha = jnp.rad2deg(alpha)
     return model(jnp.hstack([B, T, P, C, E, R, alpha, Re]))

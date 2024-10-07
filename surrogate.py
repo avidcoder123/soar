@@ -2,8 +2,6 @@ import equinox as eqx
 import jax
 import jax.numpy as jnp
 
-input_labels = ["B", "T", "P", "C", "E", "R", "Alpha", "Re"]
-
 #Define the structure for the neural network
 class SurrogateModel(eqx.Module):
     

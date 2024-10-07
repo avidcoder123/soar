@@ -1,10 +1,12 @@
 import jax
 import jax.numpy as jnp
 import jax.scipy as jsci
-from fourier_util import circulation_fn, alpha_i_fn
+from .fourier_util import circulation_fn, alpha_i_fn
+import equinox as eqx
+from util import cd
 
-@jax.jit
-def calculate_aerodynamics(coefficients, n_list, v_infty, rho, Re, alpha_geo, c, b, B, T, P, C, E, R):
+@eqx.filter_jit
+def calculate_aerodynamics(drag_model, coefficients, n_list, wing_points, v_infty, rho, Re, alpha_geo, c, b, B, T, P, C, E, R):
     thetas = jnp.linspace(1e-3, jnp.pi - 1e-3, wing_points)
     z = -(b/2) * jnp.cos(thetas)
     
@@ -21,7 +23,8 @@ def calculate_aerodynamics(coefficients, n_list, v_infty, rho, Re, alpha_geo, c,
     induced_drag *= rho * v_infty
 
     #Drag per unit span
-    d_primes = get_cds(B, T, P, C, E, R, alphas_eff, Re).flatten()
+    cd_vmap = jax.vmap(cd, in_axes=(None, None, None, None, None, None, None, 0, None))
+    d_primes = cd_vmap(drag_model, B, T, P, C, E, R, alphas_eff, Re).flatten()
     d_primes *= (1/2) * rho * v_infty ** 2 * c
     drag = jsci.integrate.trapezoid(y=d_primes, x=z)
     drag += induced_drag

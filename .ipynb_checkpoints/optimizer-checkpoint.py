@@ -3,6 +3,7 @@ import jax.numpy as jnp
 import equinox as eqx
 from util import generate_base_model
 from problems import planform_problem, airfoil_problem
+from lifting_line.fourier_util import alpha_i_fn
 
 class Optimizer():
     
@@ -52,13 +53,12 @@ class Optimizer():
         else:
             raise ValueError("Bounds must be a tuple with length 2.")
             
-    def load_surrogates(self, lift_file, drag_file):
-        base_model = generate_base_model()
+    def load_surrogates(self, lift_model, drag_model):
         
-        self.lift_surrogate = eqx.tree_deserialise_leaves(lift_file, base_model)
-        self.drag_surrogate = eqx.tree_deserialise_leaves(drag_file, base_model)
+        self.lift_surrogate = lift_model
+        self.drag_surrogate = drag_model
         
-    def solve_wing(self, lift_goal, initial_airfoil, v_infty, mu, rho, alpha_geo, lift_tolerance, maxiter):
+    def solve_wing(self, lift_goal, v_infty, mu, rho, alpha_geo, lift_tolerance=1e3, maxiter=50):
         if getattr(self, "lift_surrogate", None) is None or getattr(self, "drag_surrogate", None) is None:
             raise ValueError("Surrogate models were not initialized. Did you forget to call load_surrogates?")
         
@@ -66,12 +66,15 @@ class Optimizer():
             bounds=self.dv_bounds,
             fourier_names=self.fourier_names,
             n_list=self.n_list,
+            wing_points=self.wing_points,
             lift_goal=lift_goal,
             initial_airfoil=self.initial_airfoil,
             v_infty=v_infty,
             mu=mu,
             rho=rho,
             alpha_geo=alpha_geo,
+            lift_model=self.lift_surrogate,
+            drag_model=self.drag_surrogate,
             tolerance=lift_tolerance,
             maxiter=maxiter
         )
@@ -79,24 +82,34 @@ class Optimizer():
         #Get planform design variables
         optimized_planform = dict()
         for x in ["b", "c"]:
-            optimized_planform[x] = prob.get_value(x)
+            optimized_planform[x] = prob.get_val(x)
 
         #Values to pass on to next problem
-        Cl_0 = prob.get_value("Cl_0")
-        Re = prob.get_value("Re")
+        Cl_0 = prob.get_val("Cl_0")
+        Re = prob.get_val("Re")
+        
+        #Get the effective alphas to calculate drag for
+        fourier_coefficients = jnp.hstack([prob.get_val(x) for x in self.fourier_names])
+        thetas = jnp.linspace(1e-3, jnp.pi - 1e-3, self.wing_points)
+
+        alphas_i = jax.vmap(alpha_i_fn, in_axes=(0, None, None))(thetas, fourier_coefficients, self.n_list)
+        alphas_eff = alpha_geo - alphas_i
         
         prob = airfoil_problem(
             bounds=self.dv_bounds,
             Cl_goal=Cl_0,
             initial_airfoil=self.initial_airfoil,
+            alphas_eff=alphas_eff,
             Re=Re,
+            lift_model=self.lift_surrogate,
+            drag_model=self.drag_surrogate,
             maxiter=maxiter
         )
         
         optimized_airfoil = dict()
         
         for x in ["B", "T", "P", "C", "E", "R"]:
-            optimized_airfoil[x] = prob.get_value(x)
+            optimized_airfoil[x] = prob.get_val(x)
         
         #Return the ideal parameters
         return {

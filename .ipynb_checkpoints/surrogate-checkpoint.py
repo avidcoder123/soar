@@ -2,8 +2,6 @@ import equinox as eqx
 import jax
 import jax.numpy as jnp
 
-input_labels = ["B", "T", "P", "C", "E", "R", "Alpha", "Re"]
-
 #Define the structure for the neural network
 class SurrogateModel(eqx.Module):
     
@@ -49,16 +47,3 @@ class SurrogateModel(eqx.Module):
             x = layer(x)
 
         return x
-    
-#Generate the base network, later to be populated with weights
-def generate_base_model(key=jax.random.PRNGKey(42)):
-    model = SurrogateModel(
-        in_size=len(input_labels),
-        out_size=1,
-        width_size=64,
-        depth=4,
-        activation=jax.nn.silu,
-        key=key
-    )
-    
-    return model

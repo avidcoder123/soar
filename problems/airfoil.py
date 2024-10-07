@@ -1,11 +1,11 @@
 import openmdao.api as om
 from components import AirfoilLift, AirfoilDrag
 
-def airfoil_problem(bounds, Cl_goal, initial_airfoil, Re, maxiter):
+def airfoil_problem(bounds, Cl_goal, initial_airfoil, alphas_eff, Re, lift_model, drag_model, maxiter):
     prob = om.Problem()
     
-    prob.model.add_subsystem("lift", AirfoilLift())
-    prob.model.add_subsystem("drag", AirfoilDrag())
+    prob.model.add_subsystem("lift", AirfoilLift(lift_model))
+    prob.model.add_subsystem("drag", AirfoilDrag(drag_model, alphas_eff))
 
     prob.model.promotes("lift", any=["*"])
     prob.model.promotes("drag", any=["*"])

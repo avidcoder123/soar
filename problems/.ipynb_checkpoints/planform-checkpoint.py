@@ -1,8 +1,9 @@
 import openmdao.api as om
 from components import FourierCoefficients, Lift0, LiftingLine, ReynoldsCalculator
 from util import cl
+import jax.numpy as jnp
 
-def planform_problem(bounds, fourier_names, lift_goal, initial_airfoil, v_infty, mu, rho, alpha_geo, tolerance, maxiter):
+def planform_problem(bounds, fourier_names, n_list, wing_points, lift_goal, initial_airfoil, v_infty, mu, rho, alpha_geo, lift_model, drag_model, tolerance, maxiter):
     prob = om.Problem()
     
     B = initial_airfoil["B"]
@@ -15,8 +16,8 @@ def planform_problem(bounds, fourier_names, lift_goal, initial_airfoil, v_infty,
 
     prob.model.add_subsystem("lift_0", Lift0())
     prob.model.add_subsystem("reynolds", ReynoldsCalculator())
-    prob.model.add_subsystem("circulation", FourierCoefficients(fourier_names))
-    prob.model.add_subsystem("llt", LiftingLine(fourier_names))
+    prob.model.add_subsystem("circulation", FourierCoefficients(fourier_names, n_list, wing_points))
+    prob.model.add_subsystem("llt", LiftingLine(fourier_names, n_list, wing_points, drag_model))
     prob.model.add_subsystem("aspect_ratio", om.ExecComp("AR = b / c"))
 
     prob.model.promotes("lift_0", any=["*"])
@@ -25,7 +26,7 @@ def planform_problem(bounds, fourier_names, lift_goal, initial_airfoil, v_infty,
     prob.model.promotes("llt", any=["*"])
     prob.model.promotes("aspect_ratio", any=["*"])
 
-    prob.model.add_design_var("c", lower=bounds["c"][0], upper=bounds["C"][1])
+    prob.model.add_design_var("c", lower=bounds["c"][0], upper=bounds["c"][1])
     prob.model.add_design_var("b", lower=bounds["c"][0] * bounds["AR"][0], upper=bounds["c"][1] * bounds["AR"][1])
 
     prob.model.add_design_var("Cl_0", lower=0)
@@ -48,7 +49,7 @@ def planform_problem(bounds, fourier_names, lift_goal, initial_airfoil, v_infty,
     prob.set_val("c", 3)
     prob.set_val("b", 30)
     
-    Cl_0 = cl(B, T, P, C, E, R, jnp.float32(0), 1_000_000)
+    Cl_0 = cl(lift_model, B, T, P, C, E, R, jnp.float32(0), 1_000_000)
     prob.set_val("Cl_0", Cl_0)
 
     prob.set_val("v_infty", v_infty)
