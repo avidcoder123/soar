@@ -4,6 +4,7 @@ import equinox as eqx
 from util import generate_base_model
 from problems import planform_problem, airfoil_problem
 from lifting_line.fourier_util import alpha_i_fn
+from lifting_line.aerodynamic_calculator import calculate_aerodynamics
 
 class Optimizer():
     
@@ -58,10 +59,14 @@ class Optimizer():
         self.lift_surrogate = lift_model
         self.drag_surrogate = drag_model
         
-    def solve_wing(self, lift_goal, v_infty, mu, rho, alpha_geo, lift_tolerance=1e3, maxiter=50):
+    def solve_wing(self, lift_goal, v_infty, mu, rho, alpha_geo, tol=0.01, maxiter=100):
         if getattr(self, "lift_surrogate", None) is None or getattr(self, "drag_surrogate", None) is None:
             raise ValueError("Surrogate models were not initialized. Did you forget to call load_surrogates?")
+            
+        #Within 1% of lift goal
+        lift_tolerance = lift_goal * tol
         
+        print("Optimizing planform")
         prob = planform_problem(
             bounds=self.dv_bounds,
             fourier_names=self.fourier_names,
@@ -93,8 +98,9 @@ class Optimizer():
         thetas = jnp.linspace(1e-3, jnp.pi - 1e-3, self.wing_points)
 
         alphas_i = jax.vmap(alpha_i_fn, in_axes=(0, None, None))(thetas, fourier_coefficients, self.n_list)
-        alphas_eff = alpha_geo - alphas_i
+        alphas_eff = alpha_geo - alphas_i     
         
+        print("Optimizing airfoil")
         prob = airfoil_problem(
             bounds=self.dv_bounds,
             Cl_goal=Cl_0,
@@ -110,9 +116,28 @@ class Optimizer():
         
         for x in ["B", "T", "P", "C", "E", "R"]:
             optimized_airfoil[x] = prob.get_val(x)
+            
+        lift, drag = calculate_aerodynamics(
+            drag_model=self.drag_surrogate,
+            coefficients=fourier_coefficients,
+            n_list=self.n_list,
+            wing_points=self.wing_points,
+            v_infty=v_infty,
+            rho=rho,
+            Re=Re,
+            alpha_geo=alpha_geo,
+            **optimized_planform,
+            **optimized_airfoil
+        )
         
         #Return the ideal parameters
         return {
-            **optimized_airfoil,
-            **optimized_planform
+            "parameters": {
+                **optimized_airfoil,
+                **optimized_planform   
+            },
+            "aerodynamics": {
+                "L": lift,
+                "D": drag
+            }
         }

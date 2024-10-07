@@ -2,6 +2,7 @@ import openmdao.api as om
 from components import AirfoilLift, AirfoilDrag
 
 def airfoil_problem(bounds, Cl_goal, initial_airfoil, alphas_eff, Re, lift_model, drag_model, maxiter):
+    
     prob = om.Problem()
     
     prob.model.add_subsystem("lift", AirfoilLift(lift_model))
@@ -33,6 +34,8 @@ def airfoil_problem(bounds, Cl_goal, initial_airfoil, alphas_eff, Re, lift_model
     prob.set_val("C", C)
     prob.set_val("E", E)
     prob.set_val("R", R)
+    
+    prob.set_val("Re", Re)
     
     prob.driver.options["maxiter"] = maxiter
 
