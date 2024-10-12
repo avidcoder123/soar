@@ -91,6 +91,7 @@ class Optimizer():
 
         #Values to pass on to next problem
         Cl_0 = prob.get_val("Cl_0")
+        print("Cl_0 goal:", Cl_0)
         Re = prob.get_val("Re")
         
         #Get the effective alphas to calculate drag for
@@ -109,7 +110,7 @@ class Optimizer():
             Re=Re,
             lift_model=self.lift_surrogate,
             drag_model=self.drag_surrogate,
-            maxiter=maxiter
+            maxiter=maxiter * 5
         )
         
         optimized_airfoil = dict()
@@ -121,7 +122,7 @@ class Optimizer():
             drag_model=self.drag_surrogate,
             coefficients=fourier_coefficients,
             n_list=self.n_list,
-            wing_points=self.wing_points,
+            wing_points=1000,
             v_infty=v_infty,
             rho=rho,
             Re=Re,

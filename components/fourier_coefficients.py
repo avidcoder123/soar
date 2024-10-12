@@ -38,7 +38,7 @@ class FourierCoefficients(om.ExplicitComponent):
         
         alpha_0 = inputs["alpha_0"]
         
-        coefficients = solve_coefficients(self.n_list, self.wing_points, v_infty, rho, mu, alpha_geo, c, b, alpha_0)
+        coefficients = solve_coefficients(self.n_list, self.wing_points, alpha_geo, c, b, alpha_0)
         
         for name, value in zip(self.fourier_names, coefficients):
             outputs[name] = value
