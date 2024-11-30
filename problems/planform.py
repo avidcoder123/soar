@@ -1,9 +1,9 @@
 import openmdao.api as om
-from components import FourierCoefficients, Lift0, LiftingLine, ReynoldsCalculator
+from components import FourierCoefficients, Lift0, LiftingLine, ReynoldsCalculator, EulerBernoulliBeam
 from util import cl
 import jax.numpy as jnp
 
-def planform_problem(bounds, fourier_names, n_list, wing_points, lift_goal, initial_airfoil, v_infty, mu, rho, alpha_geo, lift_model, drag_model, tolerance, maxiter):
+def planform_problem(bounds, fourier_names, n_list, wing_points, lift_goal, initial_airfoil, v_infty, mu, rho, alpha_geo, youngs_modulus, metal_density, yield_strength, shear_strength, safety_factor, lift_model, drag_model, tolerance, maxiter):
     prob = om.Problem()
     
     B = initial_airfoil["B"]
@@ -18,6 +18,8 @@ def planform_problem(bounds, fourier_names, n_list, wing_points, lift_goal, init
     prob.model.add_subsystem("reynolds", ReynoldsCalculator())
     prob.model.add_subsystem("circulation", FourierCoefficients(fourier_names, n_list, wing_points))
     prob.model.add_subsystem("llt", LiftingLine(fourier_names, n_list, wing_points, drag_model))
+    #TODO: Make material properties adjustable
+    prob.model.add_subsystem("beam", EulerBernoulliBeam(fourier_names, n_list, wing_points, youngs_modulus, metal_density))
     prob.model.add_subsystem("aspect_ratio", om.ExecComp("AR = b / c"))
 
     prob.model.promotes("lift_0", any=["*"])
@@ -25,6 +27,7 @@ def planform_problem(bounds, fourier_names, n_list, wing_points, lift_goal, init
     prob.model.promotes("circulation", any=["*"])
     prob.model.promotes("llt", any=["*"])
     prob.model.promotes("aspect_ratio", any=["*"])
+    prob.model.promotes("beam", any=["*"])
 
     prob.model.add_design_var("c", lower=bounds["c"][0], upper=bounds["c"][1])
     prob.model.add_design_var("b", lower=bounds["c"][0] * bounds["AR"][0], upper=bounds["c"][1] * bounds["AR"][1])
@@ -33,6 +36,10 @@ def planform_problem(bounds, fourier_names, n_list, wing_points, lift_goal, init
 
     prob.model.add_constraint("AR", lower=bounds["AR"][0], upper=bounds["AR"][1])
     prob.model.add_constraint("L", equals=lift_goal)
+    
+    prob.model.add_constraint("normal_stress", upper=yield_strength * safety_factor)
+    prob.model.add_constraint("shear_stress", upper=shear_strength * safety_factor)
+    
     prob.model.add_objective("D")
 
     prob.driver = om.ScipyOptimizeDriver()

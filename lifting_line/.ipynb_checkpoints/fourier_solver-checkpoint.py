@@ -30,7 +30,7 @@ def circulation_loss(coefficients, n_list, wing_points, alpha_0, alpha_geo, b, c
     return loss
 
 def solve_coefficients(n_list, wing_points, alpha_geo, c, b, alpha_0):
-    
+        
     #Initial guess for Fourier coefficients
     coefficients = jnp.array([1.6569553e-02, 2.6246815e-03, 6.8349997e-04, 2.1998581e-04, 8.2535254e-05, 3.4354089e-05, 1.4852858e-05, 6.4759911e-06, 4.3458158e-06, 2.8336714e-05])
     # coefficients = jnp.array([2.8647788e-02, 4.5476495e-03, 1.1916839e-03, 3.9002407e-04,
@@ -54,5 +54,5 @@ def solve_coefficients(n_list, wing_points, alpha_geo, c, b, alpha_0):
         )
 
         coefficients = optax.apply_updates(coefficients, updates)
-            
+                    
     return coefficients

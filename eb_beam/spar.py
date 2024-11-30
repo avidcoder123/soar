@@ -20,7 +20,7 @@ def max_camber_x(E):
 #x is position of spar in c
 #alpha is angle of attack in degrees
 @jax.jit
-def spar_moments(B, T, P, C, E, R, c, web_w, flange_w, flange_h, x, alpha)
+def spar_moments(B, T, P, C, E, R, c, web_w, flange_w, flange_h, x, alpha):
     alpha = jnp.deg2rad(alpha)
     
     #Height of the web

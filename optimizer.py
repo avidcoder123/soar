@@ -59,9 +59,19 @@ class Optimizer():
         self.lift_surrogate = lift_model
         self.drag_surrogate = drag_model
         
-    def solve_wing(self, lift_goal, v_infty, mu, rho, alpha_geo, tol=0.01, maxiter=100):
+    def define_material(self, E, rho, yield_strength, shear_strength):
+        self.material = dict()
+        self.material["youngs_modulus"] = E
+        self.material["metal_density"] = rho
+        self.material["yield_strength"] = yield_strength
+        self.material["shear_strength"] = shear_strength
+        
+    def solve_wing(self, lift_goal, safety_factor, v_infty, mu, rho, alpha_geo, tol=0.01, maxiter=100):
         if getattr(self, "lift_surrogate", None) is None or getattr(self, "drag_surrogate", None) is None:
             raise ValueError("Surrogate models were not initialized. Did you forget to call load_surrogates?")
+            
+        if getattr(self, "material", None) is None:
+            raise ValueError("Wing material not initialized. Did you forget to call define_material?")
             
         #Within 1% of lift goal
         lift_tolerance = lift_goal * tol
@@ -78,6 +88,11 @@ class Optimizer():
             mu=mu,
             rho=rho,
             alpha_geo=alpha_geo,
+            youngs_modulus=self.material["youngs_modulus"],
+            metal_density=self.material["metal_density"],
+            yield_strength=self.material["yield_strength"],
+            shear_strength=self.material["shear_strength"],
+            safety_factor=safety_factor,
             lift_model=self.lift_surrogate,
             drag_model=self.drag_surrogate,
             tolerance=lift_tolerance,
@@ -93,6 +108,9 @@ class Optimizer():
         Cl_0 = prob.get_val("Cl_0")
         print("Cl_0 goal:", Cl_0)
         Re = prob.get_val("Re")
+        
+        normal_stress = prob.get_val("normal_stress").item()
+        shear_stress = prob.get_val("shear_stress").item()
         
         #Get the effective alphas to calculate drag for
         fourier_coefficients = jnp.hstack([prob.get_val(x) for x in self.fourier_names])
@@ -114,7 +132,6 @@ class Optimizer():
         )
         
         optimized_airfoil = dict()
-        
         for x in ["B", "T", "P", "C", "E", "R"]:
             optimized_airfoil[x] = prob.get_val(x)
             
@@ -139,6 +156,12 @@ class Optimizer():
             },
             "aerodynamics": {
                 "L": lift,
-                "D": drag
+                "D": drag,
+                "Cl_0": Cl_0,
+                "alpha_0": jnp.rad2deg(-Cl_0/(2 * jnp.pi))
+            },
+            "structure": {
+                "normal": normal_stress / self.material["yield_strength"],
+                "shear": shear_stress / self.material["shear_strength"]
             }
         }
