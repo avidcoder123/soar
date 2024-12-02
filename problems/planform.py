@@ -18,7 +18,7 @@ def planform_problem(bounds, fourier_names, n_list, wing_points, lift_goal, init
     prob.model.add_subsystem("reynolds", ReynoldsCalculator())
     prob.model.add_subsystem("circulation", FourierCoefficients(fourier_names, n_list, wing_points))
     prob.model.add_subsystem("llt", LiftingLine(fourier_names, n_list, wing_points, drag_model))
-    #TODO: Make material properties adjustable
+
     prob.model.add_subsystem("beam", EulerBernoulliBeam(fourier_names, n_list, wing_points, youngs_modulus, metal_density))
     prob.model.add_subsystem("aspect_ratio", om.ExecComp("AR = b / c"))
 
@@ -31,6 +31,11 @@ def planform_problem(bounds, fourier_names, n_list, wing_points, lift_goal, init
 
     prob.model.add_design_var("c", lower=bounds["c"][0], upper=bounds["c"][1])
     prob.model.add_design_var("b", lower=bounds["c"][0] * bounds["AR"][0], upper=bounds["c"][1] * bounds["AR"][1])
+    prob.model.add_design_var("web_w", lower=bounds["web_w"][0], upper=bounds["web_w"][1])
+    prob.model.add_design_var("flange_w", lower=bounds["flange_w"][0], upper=bounds["flange_w"][1])
+    prob.model.add_design_var("flange_h", lower=bounds["flange_h"][0], upper=bounds["flange_h"][1])
+    #prob.model.add_design_var("main_x", lower=0, upper=0.5)
+    #prob.model.add_design_var("rear_x", lower=0.5, upper=1)
 
     prob.model.add_design_var("Cl_0", lower=0)
 
@@ -55,6 +60,11 @@ def planform_problem(bounds, fourier_names, n_list, wing_points, lift_goal, init
 
     prob.set_val("c", 3)
     prob.set_val("b", 30)
+    prob.set_val("web_w", 0.01)
+    prob.set_val("flange_w", 0.1)
+    prob.set_val("flange_h", 0.025)
+    prob.set_val("main_x", 0.25)
+    prob.set_val("rear_x", 0.75)
     
     Cl_0 = cl(lift_model, B, T, P, C, E, R, jnp.float32(0), 1_000_000)
     prob.set_val("Cl_0", Cl_0)

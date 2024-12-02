@@ -2,7 +2,7 @@ import jax
 import jax.numpy as jnp
 import equinox as eqx
 from util import generate_base_model
-from problems import planform_problem, airfoil_problem
+from problems import planform_problem, airfoil_problem, spar_problem
 from lifting_line.fourier_util import alpha_i_fn
 from lifting_line.aerodynamic_calculator import calculate_aerodynamics
 
@@ -44,8 +44,11 @@ class Optimizer():
         "C": (0, 0.175),
         "E": (0.6, 1),
         "R": (-0.02, 0.02),
-        "c": (1, 4),
-        "AR": (5, 15)
+        "c": (1, 6),
+        "AR": (5, 15),
+        "web_w": (0.005, 0.1),
+        "flange_w": (0.1, 0.25),
+        "flange_h": (0.005, 0.1)
     }
     
     def set_dv_bounds(self, name, bounds):
@@ -112,6 +115,12 @@ class Optimizer():
         normal_stress = prob.get_val("normal_stress").item()
         shear_stress = prob.get_val("shear_stress").item()
         
+        flange_w = prob.get_val("flange_w")
+        flange_h = prob.get_val("flange_h")
+        web_w = prob.get_val("web_w")
+        main_x = prob.get_val("main_x")
+        rear_x = prob.get_val("rear_x")
+        
         #Get the effective alphas to calculate drag for
         fourier_coefficients = jnp.hstack([prob.get_val(x) for x in self.fourier_names])
         thetas = jnp.linspace(1e-3, jnp.pi - 1e-3, self.wing_points)
@@ -148,11 +157,33 @@ class Optimizer():
             **optimized_airfoil
         )
         
+        print("Optimizing spars")
+        print("TODO: Make this use the previous optimized spars")
+        prob = spar_problem(
+            bounds=self.dv_bounds,
+            b=optimized_planform["b"],
+            c=optimized_planform["c"],
+            v_infty=v_infty,
+            rho=rho,
+            airfoil=optimized_airfoil,
+            fourier_names=self.fourier_names,
+            fourier_coefficients=fourier_coefficients,
+            n_list=self.n_list,
+            wing_points=self.wing_points,
+            youngs_modulus=self.material["youngs_modulus"],
+            metal_density=self.material["metal_density"],
+            yield_strength=self.material["yield_strength"],
+            shear_strength=self.material["shear_strength"],
+            safety_factor=safety_factor,
+            maxiter=maxiter
+        )
+        
         #Return the ideal parameters
         return {
             "parameters": {
                 **optimized_airfoil,
-                **optimized_planform   
+                **optimized_planform,
+                "AR": optimized_planform["b"]/optimized_planform["c"]
             },
             "aerodynamics": {
                 "L": lift,
@@ -162,6 +193,11 @@ class Optimizer():
             },
             "structure": {
                 "normal": normal_stress / self.material["yield_strength"],
-                "shear": shear_stress / self.material["shear_strength"]
+                "shear": shear_stress / self.material["shear_strength"],
+                "flange_w": flange_w,
+                "flange_h": flange_h,
+                "web_w": web_w,
+                "main_x": main_x,
+                "rear_x": rear_x
             }
         }
