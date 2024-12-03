@@ -36,6 +36,7 @@ class EulerBernoulliBeam(om.ExplicitComponent):
         
         self.add_output("normal_stress")
         self.add_output("shear_stress")
+        self.add_output("material_usage")
         
         
     def setup_partials(self):
@@ -102,5 +103,4 @@ class EulerBernoulliBeam(om.ExplicitComponent):
         
         outputs["normal_stress"] = normal_stress
         outputs["shear_stress"] = shear_stress
-        
-        
+        outputs["material_usage"] = A * b
