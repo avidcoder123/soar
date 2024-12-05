@@ -212,17 +212,21 @@ class Optimizer():
         main_x = prob.get_val("main_x")
         rear_x = prob.get_val("rear_x")
         
-        normal_stress = prob.get_val("normal_stress").item()
-        shear_stress = prob.get_val("shear_stress").item()
+        normal_stress = prob.get_val("normal_stress")
+        shear_stress = prob.get_val("shear_stress")
         
-        flange_w = prob.get_val("flange_w").item()
-        flange_h = prob.get_val("flange_h").item()
-        web_w = prob.get_val("web_w").item()
+        flange_w = prob.get_val("flange_w")
+        flange_h = prob.get_val("flange_h")
+        web_w = prob.get_val("web_w")
         
-        material_usage = prob.get_val("material_usage").item()
+        material_usage = prob.get_val("material_usage")
         
         main_web_h = thickness_from_x(main_x, optimized_airfoil["B"], optimized_airfoil["T"], optimized_airfoil["P"])
         rear_web_h = thickness_from_x(rear_x, optimized_airfoil["B"], optimized_airfoil["T"], optimized_airfoil["P"])
+        
+        print("Main overflow", prob.get_val("main_overflow"))
+        print("Rear overflow", prob.get_val("rear_overflow"))
+        print("Spar distance", prob.get_val("spar_distance"))
 
         
         #Return the ideal parameters

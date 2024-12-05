@@ -15,12 +15,12 @@ def spar_problem(bounds, b, c, v_infty, rho, airfoil, fourier_names, fourier_coe
     prob.model.add_design_var("flange_h", lower=bounds["flange_h"][0], upper=bounds["flange_h"][1])
     prob.model.add_design_var("main_x", lower=bounds["main_x"][0], upper=bounds["main_x"][1])
     prob.model.add_design_var("rear_x", lower=bounds["rear_x"][0], upper=bounds["rear_x"][1])
-    
-    #TODO make sure flange w and x are realistic
-    
+        
     prob.model.add_constraint("normal_stress", upper=yield_strength * safety_factor)
     prob.model.add_constraint("shear_stress", upper=shear_strength * safety_factor)
-
+    prob.model.add_constraint("main_overflow", upper=0)
+    prob.model.add_constraint("rear_overflow", upper=0)
+    prob.model.add_constraint("spar_distance", lower=0)
 
     prob.driver = om.ScipyOptimizeDriver()
     prob.driver.options["optimizer"] = "SLSQP"
