@@ -33,7 +33,7 @@ Holds the files defining the optimization problems.
 The planform problem focuses on optimizing the wingspan and chord length of the wing. However, there is also some basic spar optimization to ensure that the wing will be structurally realistic.
 
 ### airfoil.py
-Focuses on optimizing the airfoil shape to match the $C_{L,\alpha=0} goal and minimize drag at $\alpha_\mathrm{eff}$. There is also basic spar optimization to ensure that the airfoil shape is structurally sound.
+Focuses on optimizing the airfoil shape to match the $C_{L,\alpha=0}$ goal and minimize drag at $\alpha_\mathrm{eff}$. There is also basic spar optimization to ensure that the airfoil shape is structurally sound.
 
 ### spar.py
 Optimizes the spar dimensions and positions to minimize material usage while making sure the stresses are within safe limits.
@@ -51,7 +51,7 @@ Uses Euler-Bernoulli beam theory to analyze the normal and shear stresses on the
 Solves the Fourier coefficients representing the circulation distribution of the wing using a gradient-based nonlinear solver.
 
 ### lift0.py
-A simple utility component converting $C_{L,\alpha=0} to $\alpha_{L=0}$.
+A simple utility component converting $C_{L,\alpha=0}$ to $\alpha_{L=0}$.
 
 ### lifting_line.py
 Uses the calculated Fourier coefficients and wing geometry to calculate the lift and drag force.
@@ -71,3 +71,26 @@ Solves the system of nonlinear equations of the Fourier Series reformulation of 
 ### fourier_util.py
 Contains functions to calculate circulation and $\alpha_i$ from Fourier coefficients.
 
+## /eb_beam
+Functions to perform Euler-Bernoulli beam calculations
+
+### skin.py
+Calculates the area, 1st moment of area $Q$, and 2nd moment of area $I$ of the wing skin.
+
+### solve_beam.py
+Calculates the beam's shear, moment, slope, and deflection distribution using numerical cumulative integration.
+
+### spar.py
+Calculates the area, 1st moment of area $Q$, and 2nd moment of area $I$ of the spar I-beams.
+
+### stress.py
+Uses shear and moment distirbution to calculate the maximum shear and normal stress.
+
+## /notebooks
+Contains Jupyter notebooks not directly used in the codebase, but rather for analysis and data generation.
+
+### liftcurve.ipynb
+A "sandbox" to graph the lift curve of an airfoil based on shape parameters. Used during development of the airfoil surrogate models.
+
+### scrape.ipynb
+Scrapes airfoil coordinates and polars
