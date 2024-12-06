@@ -93,4 +93,4 @@ Contains Jupyter notebooks not directly used in the codebase, but rather for ana
 A "sandbox" to graph the lift curve of an airfoil based on shape parameters. Used during development of the airfoil surrogate models.
 
 ### scrape.ipynb
-Scrapes airfoil coordinates and polars
+Scrapes airfoil coordinates and polars from online databases and fits the coordinates to 6 shape parameters.
