@@ -4,8 +4,12 @@ Wing shape optimization is crucial for creating efficient aircraft, yet contempo
 This project aims to address these shortcomings by developing a novel, computationally efficient wing shape optimizer.
 
 Neural networks are leveraged to predict the lift and drag polars of a two-dimensional airfoil based on its parameterized shape.
+
 Lifting-line theory is used to generalize the airfoil polars to a finite wing.
 This is implemented by representing the wing circulation distribution as a Fourier series, simplifying the fundamental equation of lifting-line theory and significantly improving solver performance.
+
+For structural optimization, we focus on optimizing the wing spars, which we represent as two I-beams. The deflection and stresses along the wing are approximated using Euler-Bernoillo beam theory. Numerical integration is utilized to efficiently find an approximate solution.
+
 The optimizer is implemented using OpenMDAO with the SLSQP optimization algorithm.
 
 # Folder and file structure
@@ -18,3 +22,15 @@ Holds the Equinox class defining the neural network for airfoil polars. Note tha
 
 ### util.py
 Contains functions to interact with the neural networks and helper functions for atmospheric conditions.
+
+### main.ipynb
+A Jupyter Notebook showing an example of how the optimizer may be used.
+
+## /problems
+Holds the files defining the optimization problems
+
+### planform.py
+The planform problem focuses on optimizing the wingspan and chord length of the wing. However, there is also some basic spar optimization to ensure that the wing will be structurally realistic.
+
+### airfoil.py
+Focuses on optimizing the airfoil shape to match the $C_{L,\alpha=0} goal and minimize drag at $\alpha_\mathrm{eff}$
