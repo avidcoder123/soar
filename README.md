@@ -27,10 +27,47 @@ Contains functions to interact with the neural networks and helper functions for
 A Jupyter Notebook showing an example of how the optimizer may be used.
 
 ## /problems
-Holds the files defining the optimization problems
+Holds the files defining the optimization problems.
 
 ### planform.py
 The planform problem focuses on optimizing the wingspan and chord length of the wing. However, there is also some basic spar optimization to ensure that the wing will be structurally realistic.
 
 ### airfoil.py
-Focuses on optimizing the airfoil shape to match the $C_{L,\alpha=0} goal and minimize drag at $\alpha_\mathrm{eff}$
+Focuses on optimizing the airfoil shape to match the $C_{L,\alpha=0} goal and minimize drag at $\alpha_\mathrm{eff}$. There is also basic spar optimization to ensure that the airfoil shape is structurally sound.
+
+### spar.py
+Optimizes the spar dimensions and positions to minimize material usage while making sure the stresses are within safe limits.
+
+## /components
+Contains modules calculating different variables used in the optimizer.
+
+### airfoil_surrogates.py
+Calculates airfoil lift and drag polars given a parameterized airfoil.
+
+### beam.py
+Uses Euler-Bernoulli beam theory to analyze the normal and shear stresses on the wing based on its geometry and the lift distribution.
+
+### fourier_coefficients.py
+Solves the Fourier coefficients representing the circulation distribution of the wing using a gradient-based nonlinear solver.
+
+### lift0.py
+A simple utility component converting $C_{L,\alpha=0} to $\alpha_{L=0}$.
+
+### lifting_line.py
+Uses the calculated Fourier coefficients and wing geometry to calculate the lift and drag force.
+
+### reynolds_calculator.py
+A simple utility component calculating the Reynolds number.
+
+## /lifting_line
+Functions to perform lifting-line calculations
+
+### aerodynamic_calculator.py
+Takes the Fourier coefficients representing the circulation distribution and uses integration to find the total lift and drag force on the wing.
+
+### fourier_solver.py
+Solves the system of nonlinear equations of the Fourier Series reformulation of lifting-line theory.
+
+### fourier_util.py
+Contains functions to calculate circulation and $\alpha_i$ from Fourier coefficients.
+
