@@ -8,7 +8,7 @@ Neural networks are leveraged to predict the lift and drag polars of a two-dimen
 Lifting-line theory is used to generalize the airfoil polars to a finite wing.
 This is implemented by representing the wing circulation distribution as a Fourier series, simplifying the fundamental equation of lifting-line theory and significantly improving solver performance.
 
-For structural optimization, we focus on optimizing the wing spars, which we represent as two I-beams. The deflection and stresses along the wing are approximated using Euler-Bernoillo beam theory. Numerical integration is utilized to efficiently find an approximate solution.
+For structural optimization, we focus on optimizing the wing spars, which we represent as two I-beams. The deflection and stresses along the wing are approximated using Euler-Bernoulli beam theory. Numerical integration is utilized to efficiently find an approximate solution.
 
 The optimizer is implemented using OpenMDAO with the SLSQP optimization algorithm.
 
