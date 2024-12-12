@@ -13,7 +13,7 @@ def skin_moments(t, T, c, alpha):
     max_y = jnp.sqrt(max_y)
     
     A = jnp.pi * (T/2) * (1/2) #Cross-section area
-    A -= jnp.pi * ((T-t)/2) * ((1-t)/2)
+    A -= jnp.pi * ((T/2) - t) * (1-t)
     
     T = 2 * max_y #Adjust the dimensions of the airfoil ellipse based on rotation
     
