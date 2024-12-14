@@ -94,3 +94,18 @@ A "sandbox" to graph the lift curve of an airfoil based on shape parameters. Use
 
 ### scrape.ipynb
 Scrapes airfoil coordinates and polars from online databases and fits the coordinates to 6 shape parameters.
+
+## /validation
+Contains tests to evaluate the effectiveness of the optimizer system.
+
+### designspace_search.ipynb
+Used to find the design space for the airfoils. Evaluates which airfoil shapes obey the rule of thin-airfoil theory stating $\frac{\mathrm{d}C_l}{\mathrm{d}\alpha}\approx 2\pi$.
+
+### gridsearch.ipynb
+Performs a grid search on possible hyperparameters for the lifting-line solver.
+
+### gridsearch_results.ipynb
+Ranks the results of the grid search.
+
+### optim_evaluation.ipynb
+Runs the optimizer for a variety of lift goals and flight conditions to test its capabilities.
