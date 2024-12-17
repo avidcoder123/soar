@@ -37,7 +37,8 @@ def planform_problem(bounds, fourier_names, n_list, wing_points, lift_goal, init
     #prob.model.add_design_var("main_x", lower=0, upper=0.5)
     #prob.model.add_design_var("rear_x", lower=0.5, upper=1)
 
-    prob.model.add_design_var("Cl_0", lower=0)
+    #Min alpha_0 is at -10 deg
+    prob.model.add_design_var("Cl_0", lower=0, upper=jnp.pi**2 / 9)
 
     prob.model.add_constraint("AR", lower=bounds["AR"][0], upper=bounds["AR"][1])
     prob.model.add_constraint("L", equals=lift_goal)
