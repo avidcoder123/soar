@@ -2,9 +2,7 @@ import openmdao.api as om
 from components import AirfoilLift, AirfoilDrag, EulerBernoulliBeam
 
 def airfoil_problem(bounds, Cl_goal, initial_airfoil, alphas_eff, Re, lift_model, drag_model, b, c, v_infty, rho, fourier_names, fourier_coefficients, n_list, wing_points, youngs_modulus, metal_density, yield_strength, shear_strength, safety_factor, initial_spar, maxiter):
-    
-    prob = om.Problem()
-    
+        
     prob.model.add_subsystem("lift", AirfoilLift(lift_model))
     prob.model.add_subsystem("drag", AirfoilDrag(drag_model, alphas_eff))
     prob.model.add_subsystem("beam", EulerBernoulliBeam(fourier_names, n_list, wing_points, youngs_modulus, metal_density))

@@ -198,7 +198,7 @@ class EulerBernoulliBeam(om.ExplicitComponent):
         E = self.youngs_modulus
         X1 = -(b/2) * jnp.cos(thetas)
         y, _, M, V = solve_beam(q, E*I, X1)
-                
+                        
         normal_stress, shear_stress = max_stress(V, M, T, t, c, main_web_w, rear_web_w, I, Q0)
         
         material_usage = A * b
@@ -237,8 +237,7 @@ class EulerBernoulliBeam(om.ExplicitComponent):
         rear_x = inputs["rear_x"]
         
         (normal_stress, shear_stress, material_usage, main_overflow, rear_overflow, spar_distance) = self._compute_primal(b, c, v_infty, rho, alpha_geo, coefficients, *shape_params, web_w, flange_w, flange_h, main_x, rear_x)
-        
-        
+                
         outputs["normal_stress"] = normal_stress
         outputs["shear_stress"] = shear_stress
         outputs["material_usage"] = material_usage

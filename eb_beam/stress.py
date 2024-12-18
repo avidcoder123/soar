@@ -13,7 +13,7 @@ import jax.numpy as jnp
 def max_stress(V, M, T, t, c, main_web_w, rear_web_w, I, Q0):
     #Width of the total material at the neutral surface
     neutral_t = t * 2 #Wing skin
-    neutral_t = main_web_w + rear_web_w #Spars
+    neutral_t += main_web_w + rear_web_w #Spars
 
     neutral_t *= c
     T *= c

@@ -7,6 +7,8 @@ from lifting_line.fourier_util import alpha_i_fn
 from lifting_line.aerodynamic_calculator import calculate_aerodynamics
 from eb_beam.spar import thickness_from_x
 import time
+import openmdao.api as om
+import warnings
 
 class Optimizer():
     
@@ -74,6 +76,7 @@ class Optimizer():
         self.material["shear_strength"] = shear_strength
         
     def solve_wing(self, lift_goal, safety_factor, v_infty, mu, rho, alpha_geo, tol=0.01, maxiter=100):
+
         if getattr(self, "lift_surrogate", None) is None or getattr(self, "drag_surrogate", None) is None:
             raise ValueError("Surrogate models were not initialized. Did you forget to call load_surrogates?")
             
@@ -119,7 +122,6 @@ class Optimizer():
 
         #Values to pass on to next problem
         Cl_0 = prob.get_val("Cl_0")
-        print("Cl_0 goal:", Cl_0)
         Re = prob.get_val("Re")
         
         #Get the effective alphas to calculate drag for
@@ -223,10 +225,6 @@ class Optimizer():
         
         main_web_h = thickness_from_x(main_x, optimized_airfoil["B"], optimized_airfoil["T"], optimized_airfoil["P"])
         rear_web_h = thickness_from_x(rear_x, optimized_airfoil["B"], optimized_airfoil["T"], optimized_airfoil["P"])
-        
-        print("Main overflow", prob.get_val("main_overflow"))
-        print("Rear overflow", prob.get_val("rear_overflow"))
-        print("Spar distance", prob.get_val("spar_distance"))
 
         
         #Return the ideal parameters

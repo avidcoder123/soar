@@ -78,3 +78,56 @@ def dyn_viscousity(h):
     mu *= (T0 + S) / (T + S)
     
     return mu
+
+def pretty_print(results):
+    print("Airfoil")
+    print("-" * 10)
+    parameters = results["parameters"]
+    print("Base Shape Coef. %.3f" % parameters["B"].item())
+    print("Max Thickness    %.3f" % parameters["T"].item())
+    print("Taper Exponent   %.3f" % parameters["P"].item())
+    print("Max Camber       %.3f" % parameters["C"].item())
+    print("Camber Exponent  %.3f" % parameters["E"].item())
+    print("Reflex           %.3f" % parameters["R"].item())
+    print("")
+    
+    print("Planform")
+    print("-" * 10)
+    print("Wingspan         %.3f m" % parameters["b"].item())
+    c = parameters["c"].item()
+    print("Chord length     %.3f m" % c)
+    print("Aspect Ratio     %.3f" % parameters["AR"].item())
+    print("")
+    
+    print("Spars")
+    print("-" * 10)
+    structure = results["structure"]
+    print("Flange Height    %.3f m" % (structure["flange_h"]*c).item())
+    print("Flange Width     %.3f m" % (structure["flange_w"]*c).item())
+    print("Web Height       %.3f m" % (structure["web_h"]*c).item())
+    print("Web Width        %.3f m" % (structure["web_w"]*c).item())
+    print("Spar Ratio       %.2f" % structure["spar_ratio"].item())
+    print(("Main Spar Pos.   %.2f" % structure["main_x"].item()) + "c")
+    print(("Rear Spar Pos.   %.2f" % structure["rear_x"].item()) + "c")
+    print("")
+
+    
+    print("Aerodynamics & Structure")
+    print("-" * 10)
+    aerodynamics = results["aerodynamics"]
+    print("Lift             %d" % aerodynamics["L"].item())
+    print("Drag             %d" % aerodynamics["D"].item())
+    print("Cl at alpha=0    %.2f" % aerodynamics["Cl_0"].item())
+    print("Alpha Cl=0       %.2f deg" % aerodynamics["alpha_0"].item())
+    print(("Max τ threshold  %.2f" % (structure["shear"] * 100).item()) + "%")
+    print(("Max σ threshold  %.2f" % (structure["normal"] * 100).item()) + "%")
+    print("Material Usage   %.3f m3" % structure["material_usage"].item())
+    print("")
+    
+    print("Timing")
+    print("-" * 10)
+    timing = results["timing"]
+    print("Planform         %d seconds" % timing["planform"])
+    print("Airfoil          %d seconds" % timing["airfoil"])
+    print("Spars            %d seconds" % timing["spar"])
+    print("Total            %d seconds" % (timing["planform"] + timing["airfoil"] + timing["spar"]))
