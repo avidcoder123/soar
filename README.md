@@ -95,6 +95,9 @@ A "sandbox" to graph the lift curve of an airfoil based on shape parameters. Use
 ### scrape.ipynb
 Scrapes airfoil coordinates and polars from online databases and fits the coordinates to 6 shape parameters.
 
+### surrogate-train.ipynb
+Training code for the lift and drag surrogates.
+
 ## /validation
 Contains tests to evaluate the effectiveness of the optimizer system.
 
