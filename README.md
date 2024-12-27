@@ -95,17 +95,24 @@ A "sandbox" to graph the lift curve of an airfoil based on shape parameters. Use
 ### scrape.ipynb
 Scrapes airfoil coordinates and polars from online databases and fits the coordinates to 6 shape parameters.
 
+### model-train.ipynb
+Trains the lift and drag surrogate models. Note that the notebook is meant to be run on Kaggle, meaning that reproducing on a local machine will require changes to directory names.
+
+### optimizer-evaluation.ipynb
+Evaluates the optimizer at several lift goals and flight conditions. Similar to above, this notebook is meant to be run on Kaggle.
+
+### gridsearch.ipynb
+Performs a grid search on possible hyperparameters for the lifting-line solver. Similar to above, this notebook is meant to be run on Kaggle.
+
 ## /validation
 Contains tests to evaluate the effectiveness of the optimizer system.
 
 ### designspace_search.ipynb
 Used to find the design space for the airfoils. Evaluates which airfoil shapes obey the rule of thin-airfoil theory stating $\frac{\mathrm{d}C_l}{\mathrm{d}\alpha}\approx 2\pi$.
 
-### gridsearch.ipynb
-Performs a grid search on possible hyperparameters for the lifting-line solver.
 
 ### gridsearch_results.ipynb
 Ranks the results of the grid search.
 
-### optim_evaluation.ipynb
-Runs the optimizer for a variety of lift goals and flight conditions to test its capabilities.
+### optim_evaluation_graph.ipynb
+Graphs the results of the optimizer evaluation. Note that this does not actually run the optimizer; that is done by `notebooks/optimizer-evaluation.ipynb`.
