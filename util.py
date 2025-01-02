@@ -115,8 +115,8 @@ def pretty_print(results):
     print("Aerodynamics & Structure")
     print("-" * 10)
     aerodynamics = results["aerodynamics"]
-    print("Lift             %d" % aerodynamics["L"].item())
-    print("Drag             %d" % aerodynamics["D"].item())
+    print("Lift             %d N" % aerodynamics["L"].item())
+    print("Drag             %d N" % aerodynamics["D"].item())
     print("Cl at alpha=0    %.2f" % aerodynamics["Cl_0"].item())
     print("Alpha Cl=0       %.2f deg" % aerodynamics["alpha_0"].item())
     print(("Max τ threshold  %.2f" % (structure["shear"] * 100).item()) + "%")
