@@ -1,4 +1,4 @@
-# SOAR: Efficient Wing Shape Optimization using Auto-Differentiable Neural Network Surrogate Models
+# SOARv2: Efficient Wing Shape Optimization using Auto-Differentiable Neural Network Surrogate Models
 
 Wing shape optimization is crucial for creating efficient aircraft, yet contemporary approaches utilizing Computational Fluid Dynamics (CFD) simulations with the adjoint method suffer from poor performance and incompatibility with modern automatic differentiation techniques.
 This project aims to address these shortcomings by developing a novel, computationally efficient wing shape optimizer.
