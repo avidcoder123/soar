@@ -1,13 +1,11 @@
 import openmdao.api as om
-from components import Lift0, FastLiftingLine, ReynoldsCalculator, EulerBernoulliBeam, AirfoilLift, AirfoilDrag
+from components import Lift0, FastLiftingLine, ReynoldsCalculator, EllipticalEulerBernoulliBeam, AirfoilLift, AirfoilDrag
 from util import cl
 import jax.numpy as jnp
-#youngs_modulus, metal_density, yield_strength, shear_strength, safety_factor,
-def wing_problem(bounds, lift_goal, initial_airfoil, v_infty, mu, rho, alpha_geo, lift_model, drag_model, tolerance, maxiter):
+def wing_problem(bounds, lift_goal, safety_factor, initial_airfoil, v_infty, mu, rho, alpha_geo, lift_model, drag_model, tolerance, youngs_modulus, metal_density, yield_strength, shear_strength, maxiter):
     prob = om.Problem()
     
    
-    #TODO: Add in the airfoil optimization
     prob.model.add_subsystem("lift", AirfoilLift(lift_model))
     prob.model.add_subsystem("drag", AirfoilDrag(drag_model, alpha_geo))
     prob.model.add_subsystem("lift_0", Lift0())
@@ -15,7 +13,7 @@ def wing_problem(bounds, lift_goal, initial_airfoil, v_infty, mu, rho, alpha_geo
     prob.model.add_subsystem("llt", FastLiftingLine())
 
 
-    #prob.model.add_subsystem("beam", EulerBernoulliBeam(fourier_names, n_list, wing_points, youngs_modulus, metal_density))
+    prob.model.add_subsystem("beam", EllipticalEulerBernoulliBeam(youngs_modulus, metal_density))
     prob.model.add_subsystem("aspect_ratio", om.ExecComp("AR = b / c"))
 
     prob.model.promotes("lift_0", any=["*"])
@@ -24,22 +22,22 @@ def wing_problem(bounds, lift_goal, initial_airfoil, v_infty, mu, rho, alpha_geo
     prob.model.promotes("aspect_ratio", any=["*"])
     prob.model.promotes("lift", any=["*"])
     prob.model.promotes("drag", any=["*"])
-    #prob.model.promotes("beam", any=["*"])
+    prob.model.promotes("beam", any=["*"])
 
     prob.model.add_design_var("c", lower=bounds["c"][0], upper=bounds["c"][1])
     prob.model.add_design_var("b", lower=bounds["c"][0] * bounds["AR"][0], upper=bounds["c"][1] * bounds["AR"][1])
     
     for x in ["B", "T", "P", "C", "E", "R"]:
         prob.model.add_design_var(x, lower=bounds[x][0], upper=bounds[x][1])
-    #prob.model.add_design_var("web_w", lower=bounds["web_w"][0], upper=bounds["web_w"][1])
-    #prob.model.add_design_var("flange_w", lower=bounds["flange_w"][0], upper=bounds["flange_w"][1])
-    #prob.model.add_design_var("flange_h", lower=bounds["flange_h"][0], upper=bounds["flange_h"][1])
+    prob.model.add_design_var("web_w", lower=bounds["web_w"][0], upper=bounds["web_w"][1])
+    prob.model.add_design_var("flange_w", lower=bounds["flange_w"][0], upper=bounds["flange_w"][1])
+    prob.model.add_design_var("flange_h", lower=bounds["flange_h"][0], upper=bounds["flange_h"][1])
 
     prob.model.add_constraint("AR", lower=bounds["AR"][0], upper=bounds["AR"][1])
     prob.model.add_constraint("L", equals=lift_goal)
     
-    #prob.model.add_constraint("normal_stress", upper=yield_strength * safety_factor)
-    #prob.model.add_constraint("shear_stress", upper=shear_strength * safety_factor)
+    prob.model.add_constraint("normal_stress", upper=yield_strength * safety_factor)
+    prob.model.add_constraint("shear_stress", upper=shear_strength * safety_factor)
     
     prob.model.add_objective("D")
 
@@ -63,11 +61,11 @@ def wing_problem(bounds, lift_goal, initial_airfoil, v_infty, mu, rho, alpha_geo
 
     prob.set_val("c", 2)
     prob.set_val("b", 20)
-    # prob.set_val("web_w", 0.01)
-    # prob.set_val("flange_w", 0.1)
-    # prob.set_val("flange_h", 0.025)
-    # prob.set_val("main_x", 0.25)
-    # prob.set_val("rear_x", 0.75)
+    prob.set_val("web_w", 0.01)
+    prob.set_val("flange_w", 0.1)
+    prob.set_val("flange_h", 0.025)
+    prob.set_val("main_x", 0.25)
+    prob.set_val("rear_x", 0.75)
 
     prob.set_val("v_infty", v_infty)
     prob.set_val("mu", mu)

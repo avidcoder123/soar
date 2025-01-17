@@ -5,3 +5,4 @@ from .reynolds_calculator import ReynoldsCalculator
 from .airfoil_surrogates import AirfoilLift, AirfoilDrag
 from .beam import EulerBernoulliBeam
 from .fast_llt import FastLiftingLine
+from .elliptical_beam import EllipticalEulerBernoulliBeam

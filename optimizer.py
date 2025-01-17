@@ -91,6 +91,7 @@ class Optimizer():
         prob = wing_problem(
             bounds=self.dv_bounds,
             lift_goal=lift_goal,
+            safety_factor=safety_factor,
             initial_airfoil=self.initial_airfoil,
             v_infty=v_infty,
             mu=mu,
@@ -98,6 +99,10 @@ class Optimizer():
             alpha_geo=alpha_geo,
             lift_model=self.lift_surrogate,
             drag_model=self.drag_surrogate,
+            youngs_modulus=self.material["youngs_modulus"],
+            metal_density=self.material["metal_density"],
+            yield_strength=self.material["yield_strength"],
+            shear_strength=self.material["shear_strength"],
             tolerance=lift_tolerance,
             maxiter=maxiter
         )
@@ -116,6 +121,21 @@ class Optimizer():
         drag = prob.get_val("D")
         Cl_0 = prob.get_val("Cl_0")
         
+        main_x = prob.get_val("main_x")
+        rear_x = prob.get_val("rear_x")
+        
+        normal_stress = prob.get_val("normal_stress")
+        shear_stress = prob.get_val("shear_stress")
+        
+        flange_w = prob.get_val("flange_w")
+        flange_h = prob.get_val("flange_h")
+        web_w = prob.get_val("web_w")
+        
+        material_usage = prob.get_val("material_usage")
+        
+        main_web_h = thickness_from_x(main_x, prob.get_val("B"), prob.get_val("T"), prob.get_val("P"))
+        rear_web_h = thickness_from_x(rear_x, prob.get_val("B"), prob.get_val("T"), prob.get_val("P"))
+        
         return {
             "parameters": {
                 **optimized_airfoil,
@@ -128,18 +148,18 @@ class Optimizer():
                 "Cl_0": Cl_0,
                 "alpha_0": jnp.rad2deg(-Cl_0/(2 * jnp.pi))
             },
-            # "structure": {
-            #     "normal": normal_stress / self.material["yield_strength"],
-            #     "shear": shear_stress / self.material["shear_strength"],
-            #     "flange_w": flange_w,
-            #     "flange_h": flange_h,
-            #     "web_w": web_w,
-            #     "web_h": main_web_h,
-            #     "spar_ratio": main_web_h / rear_web_h,
-            #     "main_x": main_x,
-            #     "rear_x": rear_x,
-            #     "material_usage": material_usage
-            # },
+            "structure": {
+                "normal": normal_stress / self.material["yield_strength"],
+                "shear": shear_stress / self.material["shear_strength"],
+                "flange_w": flange_w,
+                "flange_h": flange_h,
+                "web_w": web_w,
+                "web_h": main_web_h,
+                "spar_ratio": main_web_h / rear_web_h,
+                "main_x": main_x,
+                "rear_x": rear_x,
+                "material_usage": material_usage
+            },
             "timing": {
                 "wing": wing_time
             }

@@ -127,7 +127,4 @@ def pretty_print(results):
     print("Timing")
     print("-" * 10)
     timing = results["timing"]
-    print("Planform         %d seconds" % timing["planform"])
-    print("Airfoil          %d seconds" % timing["airfoil"])
-    print("Spars            %d seconds" % timing["spar"])
-    print("Total            %d seconds" % (timing["planform"] + timing["airfoil"] + timing["spar"]))
+    print("Total            %.2f seconds" % (timing["wing"]))
