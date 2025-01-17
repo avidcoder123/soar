@@ -2,7 +2,7 @@ import jax
 import jax.numpy as jnp
 import equinox as eqx
 from util import generate_base_model
-from problems import planform_problem, airfoil_problem, spar_problem
+from problems import wing_problem
 from lifting_line.fourier_util import alpha_i_fn
 from lifting_line.aerodynamic_calculator import calculate_aerodynamics
 from eb_beam.spar import thickness_from_x
@@ -86,148 +86,36 @@ class Optimizer():
         #Within 1% of lift goal
         lift_tolerance = lift_goal * tol
         
-        print("Optimizing planform")
-        planform_time = time.time()
-        prob = planform_problem(
+        print("Optimizing wing")
+        wing_time = time.time()
+        prob = wing_problem(
             bounds=self.dv_bounds,
-            fourier_names=self.fourier_names,
-            n_list=self.n_list,
-            wing_points=self.wing_points,
             lift_goal=lift_goal,
             initial_airfoil=self.initial_airfoil,
             v_infty=v_infty,
             mu=mu,
             rho=rho,
             alpha_geo=alpha_geo,
-            youngs_modulus=self.material["youngs_modulus"],
-            metal_density=self.material["metal_density"],
-            yield_strength=self.material["yield_strength"],
-            shear_strength=self.material["shear_strength"],
-            safety_factor=safety_factor,
             lift_model=self.lift_surrogate,
             drag_model=self.drag_surrogate,
             tolerance=lift_tolerance,
             maxiter=maxiter
         )
-        planform_time = time.time() - planform_time
         
-        flange_w = prob.get_val("flange_w")
-        flange_h = prob.get_val("flange_h")
-        web_w = prob.get_val("web_w")
+        wing_time = time.time() - wing_time
         
-        #Get planform design variables
         optimized_planform = dict()
         for x in ["b", "c"]:
             optimized_planform[x] = prob.get_val(x)
-
-        #Values to pass on to next problem
-        Cl_0 = prob.get_val("Cl_0")
-        Re = prob.get_val("Re")
-        
-        #Get the effective alphas to calculate drag for
-        fourier_coefficients = jnp.hstack([prob.get_val(x) for x in self.fourier_names])
-        thetas = jnp.linspace(1e-3, jnp.pi - 1e-3, self.wing_points)
-
-        alphas_i = jax.vmap(alpha_i_fn, in_axes=(0, None, None))(thetas, fourier_coefficients, self.n_list)
-        alphas_eff = alpha_geo - alphas_i     
-        
-        print("Optimizing airfoil")
-        airfoil_time = time.time()
-        prob = airfoil_problem(
-            bounds=self.dv_bounds,
-            Cl_goal=Cl_0,
-            initial_airfoil=self.initial_airfoil,
-            alphas_eff=alphas_eff,
-            Re=Re,
-            lift_model=self.lift_surrogate,
-            drag_model=self.drag_surrogate,
-            b=optimized_planform["b"],
-            c=optimized_planform["c"],
-            v_infty=v_infty,
-            rho=rho,
-            fourier_names=self.fourier_names,
-            fourier_coefficients=fourier_coefficients,
-            n_list=self.n_list,
-            wing_points=self.wing_points,
-            youngs_modulus=self.material["youngs_modulus"],
-            metal_density=self.material["metal_density"],
-            yield_strength=self.material["yield_strength"],
-            shear_strength=self.material["shear_strength"],
-            safety_factor=safety_factor,
-            initial_spar={
-                "web_w": web_w,
-                "flange_w": flange_w,
-                "flange_h": flange_h
-            },
-            maxiter=maxiter * 5
-        )
-        airfoil_time = time.time() - airfoil_time
-        
+            
         optimized_airfoil = dict()
         for x in ["B", "T", "P", "C", "E", "R"]:
             optimized_airfoil[x] = prob.get_val(x)
             
-        flange_w = prob.get_val("flange_w")
-        flange_h = prob.get_val("flange_h")
-        web_w = prob.get_val("web_w")
-            
-        lift, drag = calculate_aerodynamics(
-            drag_model=self.drag_surrogate,
-            coefficients=fourier_coefficients,
-            n_list=self.n_list,
-            wing_points=1000,
-            v_infty=v_infty,
-            rho=rho,
-            Re=Re,
-            alpha_geo=alpha_geo,
-            **optimized_planform,
-            **optimized_airfoil
-        )
+        lift = prob.get_val("L")
+        drag = prob.get_val("D")
+        Cl_0 = prob.get_val("Cl_0")
         
-        print("Optimizing spars")
-        spar_time = time.time()
-        prob = spar_problem(
-            bounds=self.dv_bounds,
-            b=optimized_planform["b"],
-            c=optimized_planform["c"],
-            v_infty=v_infty,
-            rho=rho,
-            airfoil=optimized_airfoil,
-            fourier_names=self.fourier_names,
-            fourier_coefficients=fourier_coefficients,
-            n_list=self.n_list,
-            wing_points=self.wing_points,
-            youngs_modulus=self.material["youngs_modulus"],
-            metal_density=self.material["metal_density"],
-            yield_strength=self.material["yield_strength"],
-            shear_strength=self.material["shear_strength"],
-            safety_factor=safety_factor,
-            initial_spar={
-                "web_w": web_w,
-                "flange_w": flange_w,
-                "flange_h": flange_h
-            },
-            maxiter=maxiter
-        )
-        spar_time = time.time() - spar_time
-        
-        main_x = prob.get_val("main_x")
-        rear_x = prob.get_val("rear_x")
-        
-        normal_stress = prob.get_val("normal_stress")
-        shear_stress = prob.get_val("shear_stress")
-        
-        flange_w = prob.get_val("flange_w")
-        flange_h = prob.get_val("flange_h")
-        web_w = prob.get_val("web_w")
-        
-        material_usage = prob.get_val("material_usage")
-        
-        main_web_h = thickness_from_x(main_x, optimized_airfoil["B"], optimized_airfoil["T"], optimized_airfoil["P"])
-        rear_web_h = thickness_from_x(rear_x, optimized_airfoil["B"], optimized_airfoil["T"], optimized_airfoil["P"])
-
-        
-        #Return the ideal parameters
         return {
             "parameters": {
                 **optimized_airfoil,
@@ -240,21 +128,19 @@ class Optimizer():
                 "Cl_0": Cl_0,
                 "alpha_0": jnp.rad2deg(-Cl_0/(2 * jnp.pi))
             },
-            "structure": {
-                "normal": normal_stress / self.material["yield_strength"],
-                "shear": shear_stress / self.material["shear_strength"],
-                "flange_w": flange_w,
-                "flange_h": flange_h,
-                "web_w": web_w,
-                "web_h": main_web_h,
-                "spar_ratio": main_web_h / rear_web_h,
-                "main_x": main_x,
-                "rear_x": rear_x,
-                "material_usage": material_usage
-            },
+            # "structure": {
+            #     "normal": normal_stress / self.material["yield_strength"],
+            #     "shear": shear_stress / self.material["shear_strength"],
+            #     "flange_w": flange_w,
+            #     "flange_h": flange_h,
+            #     "web_w": web_w,
+            #     "web_h": main_web_h,
+            #     "spar_ratio": main_web_h / rear_web_h,
+            #     "main_x": main_x,
+            #     "rear_x": rear_x,
+            #     "material_usage": material_usage
+            # },
             "timing": {
-                "planform": planform_time,
-                "airfoil": airfoil_time,
-                "spar": spar_time
+                "wing": wing_time
             }
         }

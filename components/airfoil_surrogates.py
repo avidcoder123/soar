@@ -53,13 +53,11 @@ class AirfoilLift(om.ExplicitComponent):
 
 class AirfoilDrag(om.ExplicitComponent):
     
-    def __init__(self, model, alphas_eff):
+    def __init__(self, model, alpha_geo):
         self.model = model
-        self.alphas_eff = alphas_eff
+        self.alpha_geo = alpha_geo
         
-        cd_vmap = jax.vmap(cd, in_axes=(None, None, None, None, None, None, None, 0, None))
-        self.cd_vmap = cd_vmap
-                
+              
         super().__init__()
     
     def setup(self):
@@ -75,9 +73,9 @@ class AirfoilDrag(om.ExplicitComponent):
         
     @partial(jax.jit, static_argnums=(0,))
     def _compute_primal(self, B, T, P, C, E, R, Re):
-        cds = self.cd_vmap(self.model, B, T, P, C, E, R, self.alphas_eff, Re)
+        cd_value = cd(self.model, B, T, P, C, E, R, self.alpha_geo, Re)
         
-        return jnp.mean(cds)
+        return cd_value
         
     def compute(self, inputs, outputs):
         B, T, P, C, E, R = [inputs[x] for x in shape_params]

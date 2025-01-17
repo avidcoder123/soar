@@ -23,10 +23,13 @@ def calculate_aerodynamics(drag_model, coefficients, n_list, wing_points, v_inft
     induced_drag *= rho * v_infty
 
     #Drag per unit span
-    cd_vmap = jax.vmap(cd, in_axes=(None, None, None, None, None, None, None, 0, None))
-    d_primes = cd_vmap(drag_model, B, T, P, C, E, R, alphas_eff, Re).flatten()
-    d_primes *= (1/2) * rho * v_infty ** 2 * c
-    drag = jsci.integrate.trapezoid(y=d_primes, x=z)
+    # cd_vmap = jax.vmap(cd, in_axes=(None, None, None, None, None, None, None, 0, None))
+    # d_primes = cd_vmap(drag_model, B, T, P, C, E, R, alphas_eff, Re).flatten()
+    # d_primes *= (1/2) * rho * v_infty ** 2 * c
+    # drag = jsci.integrate.trapezoid(y=d_primes, x=z)
+    
+    drag = cd(drag_model, B, T, P, C, E, R, alpha_geo, Re)[0]
+    drag *= (1/2) * rho * v_infty ** 2 * c * b
     drag += induced_drag
     
     return jnp.array([lift, drag])
