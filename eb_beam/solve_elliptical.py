@@ -26,12 +26,17 @@ def solve_beam(L, b):
     C1 = -shear_force(L, jnp.pi)
     
     #Enforce moment at free end = 0
-    C2 = -moment(L, b, jnp.pi, C1)
+    #Always true because of sine properties
+    #C2 = -moment(L, b, jnp.pi, C1)
     
     #Get the max shear and moment (at z=0)
-    V = shear_force(L, jnp.pi/2) + C1
-    V = jnp.abs(V)
-    M = moment(L, b, jnp.pi/2, C1) + C2
+    
+    # V = shear_force(L, jnp.pi/2) + C1
+    # V = jnp.abs(V)
+    
+    #The shear force at the wing root is always half of that at the wingtip (due to sine properties)
+    V = jnp.abs(C1/2)
+    M = moment(L, b, jnp.pi/2, C1)# + C2
     M = jnp.abs(M)
     
     return (V, M)

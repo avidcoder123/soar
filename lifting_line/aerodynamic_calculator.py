@@ -5,7 +5,7 @@ from .fourier_util import circulation_fn, alpha_i_fn
 import equinox as eqx
 from util import cd
 
-@eqx.filter_jit
+#@eqx.filter_jit
 def calculate_aerodynamics(drag_model, coefficients, n_list, wing_points, v_infty, rho, Re, alpha_geo, c, b, B, T, P, C, E, R):
     thetas = jnp.linspace(1e-3, jnp.pi - 1e-3, wing_points)
     z = -(b/2) * jnp.cos(thetas)

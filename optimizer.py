@@ -1,7 +1,6 @@
 import jax
 import jax.numpy as jnp
 import equinox as eqx
-from util import generate_base_model
 from problems import wing_problem
 from lifting_line.fourier_util import alpha_i_fn
 from lifting_line.aerodynamic_calculator import calculate_aerodynamics
@@ -42,7 +41,7 @@ class Optimizer():
         
     #Bounds for the design variables
     dv_bounds = {
-        "B": (1.5, 1.8),
+        "B": (1.6, 1.8),
         "T": (0.15, 0.25),
         "P": (2.5, 3.5),
         "C": (0, 0.175),
@@ -131,7 +130,7 @@ class Optimizer():
         flange_h = prob.get_val("flange_h")
         web_w = prob.get_val("web_w")
         
-        material_usage = prob.get_val("material_usage")
+        #material_usage = prob.get_val("material_usage")
         
         main_web_h = thickness_from_x(main_x, prob.get_val("B"), prob.get_val("T"), prob.get_val("P"))
         rear_web_h = thickness_from_x(rear_x, prob.get_val("B"), prob.get_val("T"), prob.get_val("P"))
@@ -158,7 +157,7 @@ class Optimizer():
                 "spar_ratio": main_web_h / rear_web_h,
                 "main_x": main_x,
                 "rear_x": rear_x,
-                "material_usage": material_usage
+                # "material_usage": material_usage
             },
             "timing": {
                 "wing": wing_time

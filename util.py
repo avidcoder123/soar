@@ -1,14 +1,23 @@
 import jax
 import jax.numpy as jnp
 from functools import partial
-from surrogate import SurrogateModel
+from surrogate import LiftSurrogateModel ,DragSurrogateModel
 import equinox as eqx
 
 input_labels = ["B", "T", "P", "C", "E", "R", "Alpha", "Re"]
 
 #Generate the base network, later to be populated with weights
-def generate_base_model(key=jax.random.PRNGKey(42)):
-    model = SurrogateModel(
+def generate_base_models(key=jax.random.PRNGKey(42)):
+    lift_base = LiftSurrogateModel(
+        in_size=len(input_labels) - 2,
+        out_size=1,
+        width_size=64,
+        depth=4,
+        activation=jax.nn.silu,
+        key=key
+    )
+    
+    drag_base = DragSurrogateModel(
         in_size=len(input_labels),
         out_size=1,
         width_size=64,
@@ -17,16 +26,15 @@ def generate_base_model(key=jax.random.PRNGKey(42)):
         key=key
     )
     
-    return model
+    return lift_base, drag_base
 
 #These utility functions take multiple arguments as input rather than an array.
 #They also take angle inputs in radians and convert it to degrees.
 #This is because the neural network is trained in degrees.
 
 @eqx.filter_jit
-def cl(model, B, T, P, C, E, R, alpha, Re):
-    alpha = jnp.rad2deg(alpha)
-    return model(jnp.hstack([B, T, P, C, E, R, alpha, Re]))
+def cl(model, B, T, P, C, E, R):
+    return model(jnp.hstack([B, T, P, C, E, R]))
 
 @eqx.filter_jit
 def cd(model, B, T, P, C, E, R, alpha, Re):
@@ -117,11 +125,12 @@ def pretty_print(results):
     aerodynamics = results["aerodynamics"]
     print("Lift             %d N" % aerodynamics["L"].item())
     print("Drag             %d N" % aerodynamics["D"].item())
+    print("L/D Ratio        %.2f" % (aerodynamics["L"]/aerodynamics["D"]).item())
     print("Cl at alpha=0    %.2f" % aerodynamics["Cl_0"].item())
     print("Alpha Cl=0       %.2f deg" % aerodynamics["alpha_0"].item())
     print(("Max τ threshold  %.2f" % (structure["shear"] * 100).item()) + "%")
     print(("Max σ threshold  %.2f" % (structure["normal"] * 100).item()) + "%")
-    print("Material Usage   %.3f m3" % structure["material_usage"].item())
+    #print("Material Usage   %.3f m3" % structure["material_usage"].item())
     print("")
     
     print("Timing")

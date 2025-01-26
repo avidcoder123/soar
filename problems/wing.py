@@ -38,6 +38,8 @@ def wing_problem(bounds, lift_goal, safety_factor, initial_airfoil, v_infty, mu,
     
     prob.model.add_constraint("normal_stress", upper=yield_strength * safety_factor)
     prob.model.add_constraint("shear_stress", upper=shear_strength * safety_factor)
+    #Min alpha_0 is at -10 deg
+    prob.model.add_constraint("alpha_0", upper=0, lower=jnp.deg2rad(-10))
     
     prob.model.add_objective("D")
 

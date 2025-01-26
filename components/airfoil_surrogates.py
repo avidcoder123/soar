@@ -19,7 +19,6 @@ class AirfoilLift(om.ExplicitComponent):
     def setup(self):
         for x in shape_params:
                 self.add_input(x)
-        self.add_input("Re")
             
         self.add_output("Cl_0")
         
@@ -27,25 +26,24 @@ class AirfoilLift(om.ExplicitComponent):
         self.declare_partials('*', '*')
         
     @partial(jax.jit, static_argnums=(0,))
-    def _compute_primal(self, B, T, P, C, E, R, Re):
-        return cl(self.model, B, T, P, C, E, R, jnp.float32(0), Re)
+    def _compute_primal(self, B, T, P, C, E, R):
+        return cl(self.model, B, T, P, C, E, R)
     
     @partial(jax.jit, static_argnums=(0,))
-    def calculate_jacobian(self, B, T, P, C, E, R, Re):
-        return self.model_grad(self.model, B, T, P, C, E, R, jnp.float32(0), Re)
+    def calculate_jacobian(self, B, T, P, C, E, R):
+        return self.model_grad(self.model, B, T, P, C, E, R)
         
     def compute(self, inputs, outputs):
         B, T, P, C, E, R = [inputs[x] for x in shape_params]
-        Re = inputs["Re"]
         
         #Get Cl at zero AoA
-        cl_0 = self._compute_primal(B, T, P, C, E, R, Re)
-
+        cl_0 = self._compute_primal(B, T, P, C, E, R)
+        
         outputs["Cl_0"] = cl_0
         
     def compute_partials(self, inputs, partials):
         shape_params = ["B", "T", "P", "C", "E", "R"]
-        jacobian = self.calculate_jacobian(*[inputs[x] for x in shape_params + ["Re"]])
+        jacobian = self.calculate_jacobian(*[inputs[x] for x in shape_params])
         
         for param_name, derivative in zip(shape_params, jacobian):
             partials["Cl_0", param_name] = derivative.item()
@@ -75,7 +73,7 @@ class AirfoilDrag(om.ExplicitComponent):
     def _compute_primal(self, B, T, P, C, E, R, Re):
         cd_value = cd(self.model, B, T, P, C, E, R, self.alpha_geo, Re)
         
-        return cd_value
+        return jnp.abs(cd_value)
         
     def compute(self, inputs, outputs):
         B, T, P, C, E, R = [inputs[x] for x in shape_params]

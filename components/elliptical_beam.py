@@ -23,7 +23,7 @@ class EllipticalEulerBernoulliBeam(om.ExplicitComponent):
         self.add_input("alpha_geo")
         self.add_input("L")
         
-        for x in ["B", "T", "P", "C", "E", "R"]:
+        for x in ["B", "T", "P", "E"]:
             self.add_input(x)
             
         self.add_input("web_w")
@@ -34,17 +34,15 @@ class EllipticalEulerBernoulliBeam(om.ExplicitComponent):
         
         self.add_output("normal_stress")
         self.add_output("shear_stress")
-        self.add_output("material_usage")
-        self.add_output("main_overflow")
-        self.add_output("rear_overflow")
-        self.add_output("spar_distance")
+        
+        self.calculate_jacobian = jax.jit(jax.jacrev(self._compute_primal, argnums=range(13)))
         
     def setup_partials(self):
-        self.declare_partials('*', '*', method="fd")
+        self.declare_partials('*', '*')
             
     @partial(jax.jit, static_argnums=(0,))
-    def _compute_primal(self, b, c, L, B, T, P, C, E, R, alpha_geo, main_web_w, main_flange_w, main_flange_h, main_x, rear_x):
-        shape_params = [B, T, P, C, E, R]
+    def _compute_primal(self, b, c, L, B, T, P, E, alpha_geo, main_web_w, main_flange_w, main_flange_h, main_x, rear_x):
+        shape_params = [B, T, P, E]
         
         #Preset skin thickness
         t = 0.05
@@ -67,6 +65,7 @@ class EllipticalEulerBernoulliBeam(om.ExplicitComponent):
         A = skin_I + main_A + rear_A
         
         weight_loading = A * self.metal_density * 9.81
+
         
         #Get shear and moment
         V, M = solve_beam(L, b)
@@ -78,35 +77,43 @@ class EllipticalEulerBernoulliBeam(om.ExplicitComponent):
         E = self.youngs_modulus
         normal_stress, shear_stress = max_stress(V, M, T, t, c, main_web_w, rear_web_w, I, Q0)
         
-        material_usage = A * b
-        
-        main_overflow = main_x - main_flange_w/2
-        rear_overflow = rear_x + rear_flange_w/2 - 1
-        spar_distance = (rear_x - rear_flange_w/2) - (main_x + main_flange_w/2)
-        
-        #The signs are different because the main overflow is to the left and rear overflow is to the right
-        main_overflow = -main_overflow
-        
-        return jnp.hstack([normal_stress, shear_stress, material_usage, main_overflow, rear_overflow, spar_distance])
+        return jnp.hstack([normal_stress, shear_stress])
     
     def compute(self, inputs, outputs):
         b = inputs["b"]
         c = inputs["c"]
         L = inputs["L"]
         alpha_geo = inputs["alpha_geo"]
-        shape_params = [inputs[x] for x in ["B", "T", "P", "C", "E", "R"]]
+        shape_params = [inputs[x] for x in ["B", "T", "P", "E"]]
         web_w = inputs["web_w"]
         flange_w = inputs["flange_w"]
         flange_h = inputs["flange_h"]
         main_x = inputs["main_x"]
         rear_x = inputs["rear_x"]
         
-        normal_stress, shear_stress, material_usage, main_overflow, rear_overflow, spar_distance = self._compute_primal(b, c, L, *shape_params, alpha_geo, web_w, flange_w, flange_h, main_x, rear_x)
+        normal_stress, shear_stress = self._compute_primal(b, c, L, *shape_params, alpha_geo, web_w, flange_w, flange_h, main_x, rear_x)
         
         outputs["normal_stress"] = normal_stress
         outputs["shear_stress"] = shear_stress
-        outputs["material_usage"] = material_usage
         
-        outputs["main_overflow"] = main_overflow
-        outputs["rear_overflow"] = rear_overflow
-        outputs["spar_distance"] = spar_distance
+    
+    def compute_partials(self, inputs, partials):
+        b = inputs["b"]
+        c = inputs["c"]
+        L = inputs["L"]
+        alpha_geo = inputs["alpha_geo"]
+        shape_params = [inputs[x] for x in ["B", "T", "P", "E"]]
+        web_w = inputs["web_w"]
+        flange_w = inputs["flange_w"]
+        flange_h = inputs["flange_h"]
+        main_x = inputs["main_x"]
+        rear_x = inputs["rear_x"]
+        
+        jacobian = self.calculate_jacobian(b, c, L, *shape_params, alpha_geo, web_w, flange_w, flange_h, main_x, rear_x)
+        
+        input_names = ["b", "c", "L", "B", "T", "P", "E", "alpha_geo", "web_w", "flange_w", "flange_h", "main_x", "rear_x"]
+        output_names = ["normal_stress", "shear_stress"]
+        
+        for input_name, gradient in zip(input_names, jacobian):
+            for fn_name, derivative in zip(output_names, gradient):
+                partials[fn_name, input_name] = derivative
